@@ -109,7 +109,7 @@ class WGAN:
                               loss_d, loss_g, gradient_penalty), end='')
                 writer.writerow([loss_d, loss_g, gradient_penalty])
             if epoch % visualize_steps == 0:
-                noise_batch = noise_sampler(image_batch.batch_size, self.noise_dim)
+                noise_batch = noise_sampler(batch_size, self.noise_dim)
                 self.visualize(os.path.join(result_dir, 'epoch_{}'.format(epoch)),
                                noise_batch, image_sampler.data_to_image)
             if epoch % save_steps == 0:
