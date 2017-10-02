@@ -44,11 +44,15 @@ def residual_block(x, filters, activation_, is_training=True, sampling='same',
         return _x + x
 
 
-def discriminator_block(x, filters, activation_='lrelu', is_training=True, residual=True):
+def discriminator_block(x, filters, activation_='lrelu', is_training=True, normalization=None, residual=True):
     with tf.name_scope(discriminator_block.__name__):
-        _x = conv_block(x, filters, activation_, is_training, 'same', None, 0., 'conv_first')
+        _x = conv_block(x, filters, activation_, is_training, 'same', normalization, 0., 'conv_first')
         _x = conv_block(_x, filters, None, is_training, 'same', None, 0., 'conv_first')
         if residual:
             _x += x
         _x = activation(_x, 'lrelu')
+
+        normalize = batch_norm if 'batch' else layer_norm if 'layer' else None
+        if normalize is not None:
+            _x = normalize(_x, is_training)
         return _x

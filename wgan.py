@@ -21,38 +21,41 @@ class WGAN:
         self.discriminate_real = self.discriminator(self.image, reuse=False)
         self.discriminate_fake = self.discriminator(self.generate, reuse=True)
 
-        self.loss_g = -tf.reduce_mean(self.discriminate_fake)
-        self.loss_d = -(tf.reduce_mean(self.discriminate_real)
-                        - tf.reduce_mean(self.discriminate_fake))
+        with tf.name_scope('loss'):
+            self.loss_g = -tf.reduce_mean(self.discriminate_fake)
+            self.loss_d = -(tf.reduce_mean(self.discriminate_real)
+                            - tf.reduce_mean(self.discriminate_fake))
 
         # Gradient Penalty
-        self.epsilon_first_dim = tf.placeholder(tf.int32, shape=[])
-        epsilon = tf.random_uniform(shape=[self.epsilon_first_dim, 1, 1, 1],
-                                    minval=0., maxval=1.)
-        differences = self.generate - self.image
-        interpolates = self.image + (epsilon * differences)
-        gradients = tf.gradients(self.discriminator(interpolates), [interpolates])[0]
-        slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
-        self.gradient_penalty = tf.reduce_mean((slopes - 1.) ** 2)
+        with tf.name_scope('GradientPenalty'):
+            self.epsilon_first_dim = tf.placeholder(tf.int32, shape=[])
+            epsilon = tf.random_uniform(shape=[self.epsilon_first_dim, 1, 1, 1],
+                                        minval=0., maxval=1.)
+            differences = self.generate - self.image
+            interpolates = self.image + (epsilon * differences)
+            gradients = tf.gradients(self.discriminator(interpolates), [interpolates])[0]
+            slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
+            self.gradient_penalty = tf.reduce_mean((slopes - 1.) ** 2)
 
         # Optimizer
         if is_training:
-            # WGAN
-            if lambda_ == 0:
-                self.opt_d = tf.train.RMSPropOptimizer(learning_rate=5e-5)\
-                             .minimize(self.loss_d, var_list=self.discriminator.vars)
-                self.opt_g = tf.train.RMSPropOptimizer(learning_rate=5e-5)\
-                             .minimize(self.loss_g, var_list=self.generator.vars)
-                self.clip_weights = [v.assign(tf.clip_by_value(v, -0.01, 0.01))
-                                     for v in self.discriminator.vars]
-            # WGAN-GP
-            else:
-                self.opt_d = tf.train.AdamOptimizer(learning_rate=1e-4, beta1=0.5, beta2=0.9)\
-                             .minimize(self.loss_d + lambda_ * self.gradient_penalty,
-                                       var_list=self.discriminator.vars)
-                self.opt_g = tf.train.AdamOptimizer(learning_rate=1e-4, beta1=0.5, beta2=0.9) \
-                             .minimize(self.loss_g, var_list=self.generator.vars)
-                self.clip_weights = None
+            with tf.name_scope('Optimizer'):
+                # WGAN
+                if lambda_ == 0:
+                    self.opt_d = tf.train.RMSPropOptimizer(learning_rate=5e-5)\
+                                 .minimize(self.loss_d, var_list=self.discriminator.vars)
+                    self.opt_g = tf.train.RMSPropOptimizer(learning_rate=5e-5)\
+                                 .minimize(self.loss_g, var_list=self.generator.vars)
+                    self.clip_weights = [v.assign(tf.clip_by_value(v, -0.01, 0.01))
+                                         for v in self.discriminator.vars]
+                # WGAN-GP
+                else:
+                    self.opt_d = tf.train.AdamOptimizer(learning_rate=5e-5, beta1=0.5, beta2=0.9)\
+                                 .minimize(self.loss_d + lambda_ * self.gradient_penalty,
+                                           var_list=self.discriminator.vars)
+                    self.opt_g = tf.train.AdamOptimizer(learning_rate=5e-5, beta1=0.5, beta2=0.9) \
+                                 .minimize(self.loss_g, var_list=self.generator.vars)
+                    self.clip_weights = None
         self.saver = tf.train.Saver()
         self.sess = tf.Session()
         self.model_dir = None
@@ -99,7 +102,6 @@ class WGAN:
                                              self.noise: noise_batch,
                                              self.epsilon_first_dim: image_batch.shape[0],
                                              })
-                loss_d *= -1
                 if iter_ % n_critics == 0:
                     # print noise_batch.shape, self.noise, self.generate, self.image
                     _, loss_g = self.sess.run([self.opt_g, self.loss_g],

@@ -5,13 +5,14 @@ from blocks import residual_block, conv_block
 
 class Generator:
     def __init__(self, noise_dim, last_activation='tanh',
-                 color_mode='rgb', normalize='batch', is_training=True):
+                 color_mode='rgb', normalize='batch', upsampling='subpixel', is_training=True):
         self.noise_dim = noise_dim
         self.last_actovation = last_activation
         self.name = 'model/generator'
         assert color_mode in ['grayscale', 'gray', 'rgb']
         self.channel = 1 if color_mode in ['grayscale', 'gray'] else 3
         self.normalize = normalize
+        self.upsampling = upsampling
         self.is_training = is_training
 
     def __call__(self, x, reuse=False):
@@ -31,18 +32,17 @@ class Generator:
                     _x = residual_block(_x, filters=64, activation_='relu', is_training=self.is_training,
                                         sampling='same', normalization='batch', dropout=0., mode='conv_first')
 
-                _x = conv_block(_x, filters=64, activation_='relu', is_training=self.is_training,
-                                sampling='same', normalization='batch', dropout=0., mode='conv_first')
-
+            _x = conv_block(_x, filters=64, activation_='relu', is_training=self.is_training,
+                            sampling='same', normalization='batch', dropout=0., mode='conv_first')
             _x += residual_inputs
 
             with tf.name_scope('upsampling_blocks'):
                 for i in range(3):
                     _x = conv_block(_x, filters=64, activation_='relu', is_training=self.is_training,
-                                    sampling='subpixel', normalization='batch', dropout=0., mode='conv_first')
+                                    sampling=self.upsampling, normalization='batch', dropout=0., mode='conv_first')
 
-            _x = conv2d(_x, filters=3, kernel_size=(9, 9), activation_=None)
-            _x = activation(_x, self.last_actovation)
+            _x = conv_block(_x, filters=self.channel, activation_=self.last_actovation, is_training=self.is_training,
+                            sampling='same', normalization=None, dropout=0., mode='conv_first')
             return _x
 
     @property
