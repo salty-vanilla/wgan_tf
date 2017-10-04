@@ -1,8 +1,8 @@
 from layers import *
 
 
-def conv_block(x, filters, activation_, is_training=True, sampling='same',
-               normalization=None, dropout=0.0, mode='conv_first'):
+def conv_block(x, filters, activation_, kernel_size=(3, 3), is_training=True,
+               sampling='same', normalization=None, dropout=0.0, mode='conv_first'):
     assert mode in ['conv_first', 'normalization_first']
     assert sampling in ['deconv', 'subpixel', 'down', 'same']
     assert normalization in ['batch', 'layer', None]
@@ -10,12 +10,14 @@ def conv_block(x, filters, activation_, is_training=True, sampling='same',
     conv_func = conv2d_transpose if sampling == 'deconv' \
         else subpixel_conv2d if sampling == 'subpixel'\
         else conv2d
-    normalize = batch_norm if 'batch' else layer_norm if 'layer' else None
+    normalize = batch_norm if normalization == 'batch' \
+        else layer_norm if normalization == 'layer' \
+        else None
     strides = (1, 1) if sampling in ['same', 'subpixel'] else (2, 2)
 
     with tf.name_scope(conv_block.__name__):
         if mode == 'conv_first':
-            _x = conv_func(x, filters, activation_=None, strides=strides)
+            _x = conv_func(x, filters, kernel_size=kernel_size, activation_=None, strides=strides)
 
             if normalize is not None:
                 _x = normalize(_x, is_training)
@@ -36,23 +38,26 @@ def conv_block(x, filters, activation_, is_training=True, sampling='same',
         return _x
 
 
-def residual_block(x, filters, activation_, is_training=True, sampling='same',
+def residual_block(x, filters, activation_, kernel_size=(3, 3), is_training=True, sampling='same',
                    normalization=None, dropout=0.0, mode='conv_first'):
     with tf.name_scope(residual_block.__name__):
-        _x = conv_block(x, filters, activation_, is_training, sampling, normalization, dropout, mode)
-        _x = conv_block(_x, filters, None, is_training, sampling, normalization, dropout, mode)
+        _x = conv_block(x, filters, activation_, kernel_size, is_training, sampling, normalization, dropout, mode)
+        _x = conv_block(_x, filters, None, kernel_size, is_training, sampling, normalization, dropout, mode)
         return _x + x
 
 
-def discriminator_block(x, filters, activation_='lrelu', is_training=True, normalization=None, residual=True):
+def discriminator_block(x, filters, activation_='lrelu', kernel_size=(3, 3),
+                        is_training=True, normalization=None, residual=True):
     with tf.name_scope(discriminator_block.__name__):
-        _x = conv_block(x, filters, activation_, is_training, 'same', normalization, 0., 'conv_first')
-        _x = conv_block(_x, filters, None, is_training, 'same', None, 0., 'conv_first')
+        _x = conv_block(x, filters, activation_, kernel_size, is_training, 'same', normalization, 0., 'conv_first')
+        _x = conv_block(_x, filters, None, kernel_size, is_training, 'same', None, 0., 'conv_first')
         if residual:
             _x += x
         _x = activation(_x, 'lrelu')
 
-        normalize = batch_norm if 'batch' else layer_norm if 'layer' else None
+        normalize = batch_norm if normalization == 'batch' \
+            else layer_norm if normalization == 'layer' \
+            else None
         if normalize is not None:
             _x = normalize(_x, is_training)
         return _x

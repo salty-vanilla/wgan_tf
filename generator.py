@@ -20,11 +20,12 @@ class Generator:
             if reuse:
                 vs.reuse_variables()
 
-            _x = dense(x, 16 * 16 * 64, activation_=None)
-            _x = reshape(_x, (16, 16, 64))
+            _x = dense(x, 16 * 16 * 1024, activation_=None)
+            _x = reshape(_x, (16, 16, 1024))
             _x = batch_norm(_x, is_training=self.is_training)
             _x = activation(_x, 'relu')
 
+            _x = conv2d(_x, filters=64, kernel_size=(1, 1), activation_='relu')
             residual_inputs = _x
 
             with tf.name_scope('residual_blocks'):

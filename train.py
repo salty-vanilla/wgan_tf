@@ -43,7 +43,7 @@ def main():
     noise_sampler = NoiseSampler(args.noise_mode)
 
     generator = Generator(args.noise_dim, is_training=True)
-    discriminator = Discriminator(input_shape, is_training=True, normalization='layer')
+    discriminator = Discriminator(input_shape, is_training=True)
 
     wgan = WGAN(generator, discriminator, lambda_=args.lmbd, is_training=True)
 

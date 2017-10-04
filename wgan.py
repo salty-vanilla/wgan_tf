@@ -50,10 +50,10 @@ class WGAN:
                                          for v in self.discriminator.vars]
                 # WGAN-GP
                 else:
-                    self.opt_d = tf.train.AdamOptimizer(learning_rate=5e-5, beta1=0.5, beta2=0.9)\
+                    self.opt_d = tf.train.AdamOptimizer(learning_rate=1e-4, beta1=0.5, beta2=0.9)\
                                  .minimize(self.loss_d + lambda_ * self.gradient_penalty,
                                            var_list=self.discriminator.vars)
-                    self.opt_g = tf.train.AdamOptimizer(learning_rate=5e-5, beta1=0.5, beta2=0.9) \
+                    self.opt_g = tf.train.AdamOptimizer(learning_rate=1e-4, beta1=0.5, beta2=0.9) \
                                  .minimize(self.loss_g, var_list=self.generator.vars)
                     self.clip_weights = None
         self.saver = tf.train.Saver()

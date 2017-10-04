@@ -1,5 +1,5 @@
 import tensorflow as tf
-from blocks import discriminator_block
+from blocks import discriminator_block, conv_block
 from layers import conv2d, dense, flatten
 
 
@@ -15,27 +15,33 @@ class Discriminator:
             if reuse:
                 vs.reuse_variables()
 
-            _x = conv2d(x, filters=32, kernel_size=(4, 4), strides=(2, 2), activation_='lrelu')
+            _x = conv_block(x, filters=32, kernel_size=(4, 4), sampling='down',
+                            activation_='lrelu', normalization=self.normalization)
 
             for i in range(2):
                 _x = discriminator_block(_x, filters=32, is_training=self.is_training)
-            _x = conv2d(_x, filters=64, kernel_size=(4, 4), strides=(2, 2), activation_='lrelu')
+            _x = conv_block(x, filters=64, kernel_size=(4, 4), sampling='down',
+                            activation_='lrelu', normalization=self.normalization)
 
             for i in range(4):
                 _x = discriminator_block(_x, filters=64, is_training=self.is_training)
-            _x = conv2d(_x, filters=128, kernel_size=(4, 4), strides=(2, 2), activation_='lrelu')
+            _x = conv_block(x, filters=128, kernel_size=(4, 4), sampling='down',
+                            activation_='lrelu', normalization=self.normalization)
 
             for i in range(4):
                 _x = discriminator_block(_x, filters=128, is_training=self.is_training)
-            _x = conv2d(_x, filters=256, kernel_size=(4, 4), strides=(2, 2), activation_='lrelu')
+            _x = conv_block(x, filters=256, kernel_size=(4, 4), sampling='down',
+                            activation_='lrelu', normalization=self.normalization)
 
             for i in range(4):
                 _x = discriminator_block(_x, filters=256, is_training=self.is_training)
-            _x = conv2d(_x, filters=512, kernel_size=(4, 4), strides=(2, 2), activation_='lrelu')
+            _x = conv_block(x, filters=512, kernel_size=(4, 4), sampling='down',
+                            activation_='lrelu', normalization=self.normalization)
 
             for i in range(4):
                 _x = discriminator_block(_x, filters=512, is_training=self.is_training)
-            _x = conv2d(_x, filters=1024, kernel_size=(4, 4), strides=(2, 2), activation_='lrelu')
+            _x = conv_block(x, filters=1024, kernel_size=(4, 4), sampling='down',
+                            activation_='lrelu', normalization=self.normalization)
 
             if is_feature:
                 return _x
