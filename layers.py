@@ -33,7 +33,7 @@ def pixel_shuffle(x, r=2):
         _x = tf.transpose(x, (0, 3, 1, 2))
         _x = tf.reshape(_x, (bs, r, r, c // (r ** 2), h, w))
         _x = tf.transpose(_x, (0, 3, 4, 1, 5, 2))
-        _x = tf.reshape(_x, (bs, c // (r ** 2), h * 2, w * 2))
+        _x = tf.reshape(_x, (bs, c // (r ** 2), h * r, w * r))
         _x = tf.transpose(_x, (0, 2, 3, 1))
     return _x
 
