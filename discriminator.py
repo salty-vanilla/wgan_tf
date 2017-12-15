@@ -20,27 +20,27 @@ class Discriminator:
 
             for i in range(2):
                 _x = discriminator_block(_x, filters=32, is_training=self.is_training)
-            _x = conv_block(x, filters=64, kernel_size=(4, 4), sampling='down',
+            _x = conv_block(_x, filters=64, kernel_size=(4, 4), sampling='down',
                             activation_='lrelu', normalization=self.normalization)
 
             for i in range(4):
                 _x = discriminator_block(_x, filters=64, is_training=self.is_training)
-            _x = conv_block(x, filters=128, kernel_size=(4, 4), sampling='down',
+            _x = conv_block(_x, filters=128, kernel_size=(4, 4), sampling='down',
                             activation_='lrelu', normalization=self.normalization)
 
             for i in range(4):
                 _x = discriminator_block(_x, filters=128, is_training=self.is_training)
-            _x = conv_block(x, filters=256, kernel_size=(4, 4), sampling='down',
+            _x = conv_block(_x, filters=256, kernel_size=(4, 4), sampling='down',
                             activation_='lrelu', normalization=self.normalization)
 
             for i in range(4):
                 _x = discriminator_block(_x, filters=256, is_training=self.is_training)
-            _x = conv_block(x, filters=512, kernel_size=(4, 4), sampling='down',
+            _x = conv_block(_x, filters=512, kernel_size=(4, 4), sampling='down',
                             activation_='lrelu', normalization=self.normalization)
 
             for i in range(4):
                 _x = discriminator_block(_x, filters=512, is_training=self.is_training)
-            _x = conv_block(x, filters=1024, kernel_size=(4, 4), sampling='down',
+            _x = conv_block(_x, filters=1024, kernel_size=(4, 4), sampling='down',
                             activation_='lrelu', normalization=self.normalization)
 
             if is_feature:
@@ -52,4 +52,4 @@ class Discriminator:
 
     @property
     def vars(self):
-        return [var for var in tf.global_variables() if self.name in var.name]
+        return [var for var in tf.trainable_variables() if self.name in var.name]

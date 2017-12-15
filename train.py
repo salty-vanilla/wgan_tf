@@ -25,6 +25,8 @@ def main():
     parser.add_argument('--model_dir', '-md', type=str, default="./params")
     parser.add_argument('--result_dir', '-rd', type=str, default="./result")
     parser.add_argument('--noise_mode', '-nm', type=str, default="uniform")
+    parser.add_argument('--upsampling', '-up', type=str, default="subpixel")
+    parser.add_argument('--dis_norm', '-dn', type=str, default=None)
 
     args = parser.parse_args()
 
@@ -42,8 +44,8 @@ def main():
     image_sampler = ImageSampler(args.image_dir, target_size=input_shape[:2])
     noise_sampler = NoiseSampler(args.noise_mode)
 
-    generator = Generator(args.noise_dim, is_training=True)
-    discriminator = Discriminator(input_shape, is_training=True)
+    generator = Generator(args.noise_dim, is_training=True, upsampling=args.upsampling)
+    discriminator = Discriminator(input_shape, is_training=True, normalization=args.dis_norm)
 
     wgan = WGAN(generator, discriminator, lambda_=args.lmbd, is_training=True)
 

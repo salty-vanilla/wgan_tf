@@ -8,19 +8,86 @@ def dense(x, units, activation_=None):
                       activation_)
 
 
-def conv2d(x, filters, kernel_size=(3, 3), strides=(1, 1), padding='same', activation_=None):
-    return activation(kl.Conv2D(filters, kernel_size, strides, padding, activation=None)(x),
+def conv1d(x, filters, kernel_size=3, stride=1, padding='same',
+           activation_=None, is_training=True):
+    """
+
+    :param x: (bs, length, channel)
+    :param filters: int
+    :param kernel_size: int
+    :param stride: int
+    :param padding: same or valid
+    :param activation_:
+    :param is_training:
+    :return: (bs, length, new_channel)
+    """
+    _x = tf.expand_dims(x, axis=2)
+    _x = activation(kl.Conv2D(filters, (kernel_size, 1), (stride, 1), padding,
+                              activation=None, trainable=is_training)(_x),
+                    activation_)
+    _x = tf.squeeze(_x, axis=2)
+    return _x
+
+
+def conv1d_transpose(x, filters, kernel_size=3, stride=2, padding='same',
+                     activation_=None, is_training=True):
+    """
+
+        :param x: (bs, length, channel)
+        :param filters: int
+        :param kernel_size: int
+        :param stride: int
+        :param padding: same or valid
+        :param activation_:
+        :param is_training:
+        :return: (bs, length, new_channel)
+        """
+    _x = tf.expand_dims(x, axis=2)
+    _x = activation(kl.Conv2DTranspose(filters, (kernel_size, 1), (stride, 1), padding,
+                                       activation=None, trainable=is_training)(_x),
+                    activation_)
+    _x = tf.squeeze(_x, axis=2)
+    return _x
+
+
+def max_pool1d(x, kernel_size=2, stride=2, padding='same'):
+    _x = tf.expand_dims(x, axis=2)
+    _x = kl.MaxPool2D((kernel_size, 1), (stride, 1), padding)(_x)
+    _x = tf.squeeze(_x, axis=2)
+    return _x
+
+
+def average_pool1d(x, kernel_size=2, stride=2, padding='same'):
+    _x = tf.expand_dims(x, axis=2)
+    _x = kl.AveragePooling2D((kernel_size, 1), (stride, 1), padding)(_x)
+    _x = tf.squeeze(_x, axis=2)
+    return _x
+
+
+def upsampling1d(x, size=2):
+    _x = tf.expand_dims(x, axis=2)
+    _x = kl.UpSampling2D((size, 1))(_x)
+    _x = tf.squeeze(_x, axis=2)
+    return _x
+
+
+def conv2d(x, filters, kernel_size=(3, 3), strides=(1, 1), padding='same',
+           activation_=None, is_training=True):
+    return activation(kl.Conv2D(filters, kernel_size, strides, padding,
+                                activation=None, trainable=is_training)(x),
                       activation_)
 
 
-def conv2d_transpose(x, filters, kernel_size=(3, 3), strides=(2, 2), padding='same', activation_=None):
-    return activation(kl.Conv2DTranspose(filters, kernel_size, strides, padding, activation=None)(x),
+def conv2d_transpose(x, filters, kernel_size=(3, 3), strides=(2, 2), padding='same',
+                     activation_=None, is_training=True):
+    return activation(kl.Conv2DTranspose(filters, kernel_size, strides, padding,
+                                         activation=None, trainable=is_training)(x),
                       activation_)
 
 
-def subpixel_conv2d(x, filters, kernel_size=(3, 3), **kwargs):
+def subpixel_conv2d(x, filters, kernel_size=(3, 3), is_training=True, **kwargs):
     with tf.name_scope(subpixel_conv2d.__name__):
-        _x = conv2d(x, filters * 4, kernel_size, strides=(1, 1), activation_=None)
+        _x = conv2d(x, filters * 4, kernel_size, strides=(1, 1), activation_=None, is_training=is_training)
         _x = pixel_shuffle(_x)
     return _x
 
@@ -50,7 +117,7 @@ def activation(x, func=None):
 
 
 def batch_norm(x, is_training=True):
-    return tl.batch_norm(x, updates_collections=None, is_training=is_training)
+    return tl.batch_norm(x, scale=True, updates_collections=None, is_training=is_training)
 
 
 def layer_norm(x, is_training=True):
@@ -59,3 +126,7 @@ def layer_norm(x, is_training=True):
 
 def flatten(x):
     return kl.Flatten()(x)
+
+
+def global_average_pool2d(x):
+    return tf.reduce_mean(x, axis=[1, 2], name=global_average_pool2d.__name__)

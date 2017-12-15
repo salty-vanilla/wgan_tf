@@ -55,9 +55,9 @@ def discriminator_block(x, filters, activation_='lrelu', kernel_size=(3, 3),
             _x += x
         _x = activation(_x, 'lrelu')
 
-        normalize = batch_norm if normalization == 'batch' \
-            else layer_norm if normalization == 'layer' \
-            else None
-        if normalize is not None:
-            _x = normalize(_x, is_training)
+        # normalize = batch_norm if normalization == 'batch' \
+        #     else layer_norm if normalization == 'layer' \
+        #     else None
+        # if normalize is not None:
+        #     _x = normalize(_x, is_training)
         return _x
