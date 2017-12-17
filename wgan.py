@@ -29,13 +29,19 @@ class WGAN:
         # Gradient Penalty
         with tf.name_scope('GradientPenalty'):
             self.epsilon_first_dim = tf.placeholder(tf.int32, shape=[])
-            epsilon = tf.random_uniform(shape=[self.epsilon_first_dim, 1, 1, 1],
-                                        minval=0., maxval=1.)
+            if len(self.image_shape) == 3:
+                epsilon = tf.random_uniform(shape=[self.epsilon_first_dim, 1, 1, 1],
+                                            minval=0., maxval=1.)
+            elif len(self.image_shape) == 1:
+                epsilon = tf.random_uniform(shape=[self.epsilon_first_dim, 1],
+                                            minval=0., maxval=1.)
+            else:
+                raise ValueError
             differences = self.generate - self.image
             interpolates = self.image + (epsilon * differences)
             gradients = tf.gradients(self.discriminator(interpolates), [interpolates])[0]
             slopes = tf.sqrt(tf.reduce_sum(tf.square(gradients), reduction_indices=[1]))
-            self.gradient_penalty = tf.reduce_mean((slopes - 1.) ** 2)
+            self.gradient_penalty = tf.reduce_mean(tf.square(slopes - 1.))
 
         # Optimizer
         if is_training:
@@ -51,7 +57,7 @@ class WGAN:
                 # WGAN-GP
                 else:
                     self.opt_d = tf.train.AdamOptimizer(learning_rate=1e-4, beta1=0.5, beta2=0.9)\
-                                 .minimize(self.loss_d + lambda_ * self.gradient_penalty,
+                                 .minimize(self.loss_d + lambda_*self.gradient_penalty,
                                            var_list=self.discriminator.vars)
                     self.opt_g = tf.train.AdamOptimizer(learning_rate=1e-4, beta1=0.5, beta2=0.9) \
                                  .minimize(self.loss_g, var_list=self.generator.vars)
@@ -84,7 +90,8 @@ class WGAN:
 
         # for display and csv
         loss_g = 0
-        writer.writerow(['loss_d', 'loss_g', 'gp'])
+        w_dis = 0
+        writer.writerow(['loss_d', 'loss_g', 'gp', 'w_distance'])
 
         # fit loop
         for epoch in range(1, nb_epoch + 1):
@@ -106,10 +113,15 @@ class WGAN:
                     # print noise_batch.shape, self.noise, self.generate, self.image
                     _, loss_g = self.sess.run([self.opt_g, self.loss_g],
                                               feed_dict={self.noise: noise_batch})
-                print('iter : {} / {}  {:.1f}[s]  W_dis : {:.4f}  loss_g : {:.4f}  gp : {:.4f}\r'
+                    w_dis = self.sess.run(self.loss_d,
+                                          feed_dict={self.image: image_batch,
+                                                     self.noise: noise_batch
+                                                     })
+                    w_dis = -w_dis
+                print('iter : {} / {}  {:.1f}[s]  loss_d : {:.4f}  loss_g : {:.4f}  gp : {:.4f}, w_dis : {:.4f}\r'
                       .format(iter_, steps_per_epoch, time.time() - start,
-                              loss_d, loss_g, gradient_penalty), end='')
-                writer.writerow([loss_d, loss_g, gradient_penalty])
+                              loss_d, loss_g, gradient_penalty, w_dis), end='')
+                writer.writerow([loss_d, loss_g, gradient_penalty, w_dis])
             if epoch % visualize_steps == 0:
                 noise_batch = noise_sampler(batch_size, self.noise_dim)
                 self.visualize(os.path.join(result_dir, 'epoch_{}'.format(epoch)),
@@ -140,8 +152,8 @@ class WGAN:
         saver.restore(self.sess, file_path)
 
     def visualize(self, dst_dir, noise_batch, convert_function):
-        generated_datas = self.predict_on_batch(noise_batch)
-        generated_images = convert_function(generated_datas)
+        generated_data = self.predict_on_batch(noise_batch)
+        generated_images = convert_function(generated_data)
 
         if not os.path.exists(dst_dir):
             os.makedirs(dst_dir)
